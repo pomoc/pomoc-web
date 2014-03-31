@@ -10,6 +10,7 @@
     "jade": "*",
     "stylus": "*",
     "socket.io": "^0.9.16",
-    "una": "^0.4.1"
+    "una": "^0.4.1",
+    "bootstrap3-stylus": "^0.1.0"
   }
 }

@@ -1,0 +1,88 @@
+extends layout
+  
+block content
+  link(rel='stylesheet', href='/css/mobile.css')
+  body(class="mobile", ng-app, ng-controller="ChatController")
+    div(class="nav-bar") 
+      h1 Pomoc Support
+
+    div(class="chat-messages mobile-area")
+      p(class="help-text") <span class="welcome">Welcome to Pomoc!</span><br/>Start typing below to chat with us.
+      ul(class="media-list")
+        li(class="media", ng-repeat="item in chat_messages")
+          a(class="pull-left")
+            img(class="media-object img-rounded", src="http://bootflat.github.io/img/photo-1.jpg")
+          div(class="media-body")
+            h4(class="media-heading") {{ item.name }}
+            p(class="chat-message") {{ item.message }}
+
+    div(class="message-input")
+      form(class="input-group form-search", ng-submit="submit()")
+        input(id="message-box", type="text", class="form-control search-query", placeholder="Your Message Here", ng-model="input_message", autocomplete="off")
+        span(class="input-group-btn")
+          button(type="submit", class="btn btn-primary", data-type="last") Send
+
+    script(src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js")
+    script(src="/socket.io/socket.io.js")
+    script(src="/una_js/una.js") 
+
+    script.
+      var room_id = 'test';
+      var user = 'user' + utils.getRandomInt(1, 999);
+      var controller_data = {name: user};
+      var controller_id = '';
+      UnaController.register(room_id, controller_data, function(res) {
+        if (res.success) {
+          console.log(res);
+          //- controller_id = '1234';
+          // Controller registered successfully
+        } else {
+          console.log('Registration failed');
+        }
+      });
+
+      function ChatController($scope) {
+        
+        $scope.chat_messages = [];
+
+        function scrollToBottom() {
+          var height = _.reduce($('.chat-messages > *'), function(memo, item) {
+            return memo + $(item).height();
+          }, 0);
+          $('.chat-messages').animate({ scrollTop: height }, "slow");
+        }
+
+        $scope.submit = function(event) {
+          
+          var msg = $scope.input_message;
+
+          UnaController.sendToScreen('message', {
+            message: msg
+          });
+
+          $scope.chat_messages.push({
+            id: controller_id,
+            name: user,
+            message: msg
+          });
+
+          $scope.input_message = '';
+          scrollToBottom();
+        }
+
+        UnaController.onScreenInput('message', function(res) {
+          // event_key: This string should correspond to the string passed in to the `sendToController` function from the Screen
+          // res.una: Una header
+          // res.una.user_data: The user data of the Screen sender
+          // res.una.id: Unique id of the sender
+          // res.payload: Payload object that was sent by the screen
+          console.log(res);
+          $scope.chat_messages.push({
+            id: res.una.id,
+            name: res.una.user_data.name,
+            message: res.payload.message
+          });
+          $scope.$apply();
+          scrollToBottom();
+        });
+      }

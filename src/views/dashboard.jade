@@ -1,0 +1,140 @@
+extends layout
+  
+block content 
+  link(rel='stylesheet', href='/css/dashboard.css')
+  body(class="dashboard", ng-app, ng-controller="DashboardController")
+    div(class="page-container")
+      div(class="row")
+        div(class="col-md-1 main-col menu-col")
+        div(class="col-md-4 main-col chats-col")
+          div(class="existing-chats" ng-repeat="chat in chats", ng-click="selectChat($index)") 
+            h3 {{ chat.name }}
+
+        div(class="col-md-7 main-col chat-messages-col")
+          div(class="nav-bar") 
+            h1 {{ chats[selectedChatIndex].name }}
+
+          div(class="chat-messages") 
+            ul(class="media-list")
+              li(class="media", ng-repeat="item in chats[selectedChatIndex].chat_messages")
+                a(class="pull-left")
+                  img(class="media-object img-rounded", src="http://bootflat.github.io/img/photo-1.jpg")
+                div(class="media-body")
+                  h4(class="media-heading") {{ item.name }}
+                  p(class="chat-message") {{ item.message }}
+          div(class="message-input")
+            form(class="input-group form-search", ng-submit="submit()")
+              input(id="message-box", type="text", class="form-control search-query", placeholder="Your Message Here", ng-model="input_message", autocomplete="off")
+              span(class="input-group-btn")
+                button(type="submit", class="btn btn-primary", data-type="last") Send
+
+    script(src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js")
+    script(src="/socket.io/socket.io.js")
+    script(src='/una_js/una.js')
+    script.
+
+      var room_id = 'test';
+      var ADMIN_ID = 'admin';
+      var ADMIN_NAME = 'Yang Shun';
+      var screen_data = { name: ADMIN_NAME };
+      
+
+      UnaScreen.register(room_id, screen_data, function(res) {
+        if (res.success) {
+          // Screen registered successfully
+          console.log(res);
+        } else {
+          console.log('Registration failed');
+        }
+      });
+      
+      function DashboardController($scope) {
+
+        function scrollToBottom() {
+          var height = _.reduce($('.chat-messages > *'), function(memo, item) {
+            return memo + $(item).height();
+          }, 0);
+          $('.chat-messages').animate({ scrollTop: height }, "slow");
+        }
+
+        $scope.chats = [];
+        $scope.selectedChatIndex = undefined;
+
+        function addNewChat(id, name, message) {
+          $scope.chats.push({ 
+            id: id, 
+            name: name, 
+            chat_messages: []
+          });
+          if ($scope.chats.length === 1) {
+            $scope.selectedChatIndex = 0;
+          }
+          if (message) {
+            appendNewMessage(id, name, message);
+          }
+          $scope.$apply();
+        }
+
+        function appendNewMessage(id, name, message) {
+          for (var i = 0; i < $scope.chats.length; i++) {
+            if (id === $scope.chats[i].id) {
+              $scope.chats[i].chat_messages.push({ 
+                name: name, 
+                message: message 
+              });
+              setTimeout(function() {
+                scrollToBottom();
+              }, 0)
+              return;
+            }
+          }
+          if (i === $scope.chats.length) {
+            addNewChat(id, name, message);
+          }
+        }
+
+        UnaScreen.onControllerJoin(function(data) {
+          console.log('New user has joined');
+          addNewChat(data.una.id, data.una.user_data.name);
+          return true;
+        });
+
+        UnaScreen.onControllerInput('message', function(res) {
+          // event_key: This string should correspond to the string passed in to the `sendToScreen` function from the Controller
+          // res.una: Una header
+          // res.una.user_data: The user data of the Controller sender
+          // res.una.id: Unique id of the sender
+          // res.payload: Payload object that was sent by the controller
+          console.log(res.una.user_data, res.una.id, res.payload);
+          appendNewMessage(res.una.id, res.una.user_data.name, res.payload.message);
+          $scope.$apply();
+        });
+
+        UnaScreen.onControllerLeave(function(res) {    
+          for (var i = 0; i < $scope.chats.length; i++) {
+            if (res.una.id === $scope.chats[i].id) {
+              console.log(res.una.id + ' has went offline');
+              // Handle user leaving
+            }
+          }
+        });
+
+        $scope.selectChat = function(index) {
+          $scope.selectedChatIndex = index;
+        }
+
+        $scope.submit = function(event) {
+          
+          var msg = $scope.input_message;
+          var msg_obj = {
+            name: ADMIN_NAME,
+            message: msg
+          };
+          console.log('sid:', $scope.chats[$scope.selectedChatIndex].id);
+          UnaScreen.sendToController($scope.chats[$scope.selectedChatIndex].id, 'message', msg_obj);
+          $scope.chats[$scope.selectedChatIndex].chat_messages.push(msg_obj);
+          $scope.input_message = '';
+          scrollToBottom();
+        }
+      }
+
