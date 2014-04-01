@@ -95,6 +95,7 @@ block content
 
         UnaScreen.onControllerJoin(function(data) {
           console.log('New user has joined');
+          console.log(data)
           addNewChat(data.una.id, data.una.user_data.name);
           return true;
         });

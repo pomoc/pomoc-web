@@ -22,6 +22,22 @@ block content
         span(class="input-group-btn")
           button(type="submit", class="btn btn-primary", data-type="last") Send
 
+    <!-- Modal -->
+    div(class="modal fade", id="myModal", tabindex="-1", role="dialog", aria-labelledby="myModalLabel", aria-hidden="true")
+      div(class="modal-dialog")
+        div(class="modal-content")
+          div(class="modal-header")
+            button(type="button", class="close", data-dismiss="modal", aria-hidden="true") &times;
+          div(class="modal-body")
+            h5 Welcome to Pomoc!
+            hr
+            div(class="form-group")
+              label(for="exampleInputPassword1") Enter your name to start
+              input(type="text", class="form-control", ng-model="user_name", placeholder="Your Name")
+          div(class="modal-footer")
+            button(type="button", class="btn btn-primary btn-block", ng-click="submitName()") Start
+          
+
     script(src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js")
     script(src="/socket.io/socket.io.js")
     script(src="/una_js/una.js") 
@@ -31,14 +47,10 @@ block content
       var user = 'user' + utils.getRandomInt(1, 999);
       var controller_data = {name: user};
       var controller_id = '';
-      UnaController.register(room_id, controller_data, function(res) {
-        if (res.success) {
-          console.log(res);
-          //- controller_id = '1234';
-          // Controller registered successfully
-        } else {
-          console.log('Registration failed');
-        }
+      
+
+      $(function() {
+        $('#myModal').modal();
       });
 
       function ChatController($scope) {
@@ -68,6 +80,18 @@ block content
 
           $scope.input_message = '';
           scrollToBottom();
+        }
+
+        $scope.submitName = function() {
+          var user = $scope.user_name;
+          UnaController.register(room_id, { name: user }, function(res) {
+            if (res.success) {
+              console.log(res);
+              $('#myModal').modal('hide');
+            } else {
+              console.log('Registration failed');
+            }
+          });
         }
 
         UnaController.onScreenInput('message', function(res) {
