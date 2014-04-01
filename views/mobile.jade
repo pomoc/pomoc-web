@@ -43,11 +43,8 @@ block content
     script(src="/una_js/una.js") 
 
     script.
-      var room_id = 'test';
-      var user = 'user' + utils.getRandomInt(1, 999);
-      var controller_data = {name: user};
+      var room_id = 'test';      
       var controller_id = '';
-      
 
       $(function() {
         $('#myModal').modal();
@@ -56,6 +53,7 @@ block content
       function ChatController($scope) {
         
         $scope.chat_messages = [];
+        $scope.user_name = '';
 
         function scrollToBottom() {
           var height = _.reduce($('.chat-messages > *'), function(memo, item) {
@@ -74,7 +72,7 @@ block content
 
           $scope.chat_messages.push({
             id: controller_id,
-            name: user,
+            name: $scope.user_name,
             message: msg
           });
 
@@ -83,8 +81,7 @@ block content
         }
 
         $scope.submitName = function() {
-          var user = $scope.user_name;
-          UnaController.register(room_id, { name: user }, function(res) {
+          UnaController.register(room_id, { name: $scope.user_name }, function(res) {
             if (res.success) {
               console.log(res);
               $('#myModal').modal('hide');
